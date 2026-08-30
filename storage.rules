@@ -1,0 +1,93 @@
+rules_version = '2';
+
+/**
+ * Reglas de seguridad de Firebase Storage — ServiciosYa
+ *
+ * CORRECCIÓN CRÍTICA (encontrada al auditar el proyecto):
+ * La versión anterior de este archivo era:
+ *
+ *   allow read, write: if false;
+ *
+ * Es decir, denegaba TODA lectura y escritura de forma incondicional.
+ * Con esa regla, ninguna de las siguientes funciones puede haber
+ * funcionado nunca en el entorno real: subir foto de perfil
+ * (PerfilCliente.jsx), subir la selfie de verificación de identidad
+ * (PerfilProfesional.jsx), adjuntar fotos a una solicitud (Solicitar.jsx)
+ * o enviar archivos por chat (Chatpage.jsx).
+ *
+ * Estas reglas reemplazan el bloqueo total por permisos acotados a las
+ * rutas reales que usa el código:
+ *   - profiles/{uid}/avatar.jpg           → foto de perfil (pública)
+ *   - profiles/{uid}/verified_face.jpg    → selfie de verificación IA (privada)
+ *   - requests/{requestId}/...            → fotos adjuntas a una solicitud
+ *   - chats/{requestId}/...               → adjuntos del chat de una solicitud
+ */
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    /* ── profiles/{uid}/avatar.jpg ─────────────────────────
+       Foto de perfil: visible públicamente (se muestra en
+       ProfesionalProfile.jsx a cualquier visitante), pero solo el
+       dueño puede subir/reemplazar su propia foto. Límite de 5 MB
+       y solo tipos de imagen, para evitar abuso del almacenamiento.
+    ────────────────────────────────────────────────────────── */
+    match /profiles/{uid}/avatar.jpg {
+      allow read: if true;
+      allow write: if request.auth != null
+        && request.auth.uid == uid
+        && request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType.matches("image/.*");
+    }
+
+    /* ── profiles/{uid}/verified_face.jpg ──────────────────
+       Selfie usada para la verificación de identidad por IA
+       (Google Cloud Vision, ver functions/index.js). Es información
+       sensible: solo el propio usuario y administración pueden
+       leerla o escribirla. La Cloud Function que la procesa usa el
+       SDK de administración, que no está sujeto a estas reglas.
+    ────────────────────────────────────────────────────────── */
+    match /profiles/{uid}/verified_face.jpg {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if request.auth != null
+        && request.auth.uid == uid
+        && request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType.matches("image/.*");
+    }
+
+    /* ── requests/{requestId}/... ──────────────────────────
+       Fotos adjuntas a una solicitud de servicio (ej. foto de la
+       fuga de agua). Solo el cliente dueño de la solicitud y el
+       profesional asignado pueden leer o subir archivos.
+    ────────────────────────────────────────────────────────── */
+    match /requests/{requestId}/{fileName} {
+      function requestDoc() {
+        return firestore.get(/databases/(default)/documents/requests/$(requestId)).data;
+      }
+      allow read, write: if request.auth != null && (
+        requestDoc().clientId == request.auth.uid ||
+        requestDoc().acceptedById == request.auth.uid
+      );
+    }
+
+    /* ── chats/{requestId}/... ─────────────────────────────
+       Adjuntos enviados por chat dentro de una solicitud. Mismas
+       reglas que las fotos de la solicitud: solo cliente y
+       profesional asignado.
+    ────────────────────────────────────────────────────────── */
+    match /chats/{requestId}/{fileName} {
+      function requestDoc() {
+        return firestore.get(/databases/(default)/documents/requests/$(requestId)).data;
+      }
+      allow read, write: if request.auth != null && (
+        requestDoc().clientId == request.auth.uid ||
+        requestDoc().acceptedById == request.auth.uid
+      );
+    }
+
+    /* Cualquier otra ruta no contemplada queda denegada por defecto. */
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

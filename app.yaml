@@ -1,0 +1,9 @@
+runtime: nodejs18
+handlers:
+  - url: /google353304a8c6eb4dd2.html
+    static_files: public/google353304a8c6eb4dd2.html
+    upload: public/google353304a8c6eb4dd2.html
+
+  - url: /.*
+    static_files: public/index.html
+    upload: public/index.html

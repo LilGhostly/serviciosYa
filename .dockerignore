@@ -1,0 +1,10 @@
+node_modules
+dist
+dist-ssr
+.git
+.env
+.env.local
+*.log
+.DS_Store
+.firebase
+functions/node_modules

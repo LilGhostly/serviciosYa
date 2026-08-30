@@ -1,0 +1,49 @@
+# Levanta el proyecto completo en contenedores para desarrollo/demostración:
+#   - frontend: build de producción de React servido por Nginx
+#   - backend:  emuladores de Firebase (Functions, Firestore, Storage, Auth)
+#
+# Uso:
+#   cp .env.example .env && cp functions/.env.example functions/.env
+#   # completa ambos .env con tus credenciales de desarrollo
+#   docker compose up --build
+#
+# Frontend:            http://localhost:8080
+# UI de emuladores:    http://localhost:4000
+#
+# NOTA: en este modo, el frontend construido apunta a un proyecto de
+# Firebase real (las variables VITE_FIREBASE_* de .env), no a los
+# emuladores locales — conectar el frontend a los emuladores requeriría
+# adicionalmente `connectFirestoreEmulator`/`connectAuthEmulator` en
+# src/firebase.js, deliberadamente no activado por defecto para no
+# complicar el flujo de build de producción.
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VITE_GOOGLE_MAPS_API_KEY: ${VITE_GOOGLE_MAPS_API_KEY}
+        VITE_FIREBASE_API_KEY: ${VITE_FIREBASE_API_KEY}
+        VITE_FIREBASE_AUTH_DOMAIN: ${VITE_FIREBASE_AUTH_DOMAIN}
+        VITE_FIREBASE_PROJECT_ID: ${VITE_FIREBASE_PROJECT_ID}
+        VITE_FIREBASE_STORAGE_BUCKET: ${VITE_FIREBASE_STORAGE_BUCKET}
+        VITE_FIREBASE_MESSAGING_SENDER_ID: ${VITE_FIREBASE_MESSAGING_SENDER_ID}
+        VITE_FIREBASE_APP_ID: ${VITE_FIREBASE_APP_ID}
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+
+  backend:
+    build:
+      context: .
+      dockerfile: functions/Dockerfile
+    env_file:
+      - functions/.env
+    ports:
+      - "4000:4000"   # UI de emuladores
+      - "5001:5001"   # Functions
+      - "8081:8080"   # Firestore (8080 se deja libre para el frontend en host)
+      - "9099:9099"   # Auth
+      - "9199:9199"   # Storage

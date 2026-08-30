@@ -1,0 +1,112 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /* ============================================================
+       Helper: ¿la persona que hace la petición es admin?
+       Se verifica leyendo SU PROPIO documento en /users (no el que
+       está intentando modificar), comparando el campo "role".
+       Esto reemplaza la lista de campos sueltos que había antes
+       (ratingStats/reputationPoints/isBlocked/penaltyUntil): en vez
+       de autorizar campo por campo cada vez que el panel de Admin
+       gana una función nueva, se autoriza al rol completo.
+    ============================================================ */
+    function isAdmin() {
+      return request.auth != null &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // ============================================================
+    // USERS → Perfiles, Calificaciones y Sanciones
+    // ============================================================
+    match /users/{uid} {
+      allow list: if true;
+      allow get: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == uid;
+
+      // El dueño siempre puede editar su propio documento.
+      // Un admin puede editar cualquier documento (sello municipal,
+      // suspensión, reinicio de strikes, etc.).
+      // Cualquier otro usuario autenticado solo puede tocar los campos
+      // de calificación/sanción automática que se escriben al cerrar un
+      // trabajo (ver MisSolicitudes.jsx / MisTrabajos.jsx).
+      allow update: if request.auth != null && (
+        request.auth.uid == uid ||
+        isAdmin() ||
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['ratingStats', 'reputationPoints', 'isBlocked', 'penaltyUntil'])
+      );
+    }
+
+    // ============================================================
+    // BANNED RUTS → Lista negra de RUTs baneados por administración
+    // ============================================================
+    match /bannedRuts/{rut} {
+      // Solo un admin puede agregar/quitar RUTs de la lista negra.
+      allow write: if isAdmin();
+      // Lectura abierta a cualquier autenticado: en el futuro, el
+      // formulario de registro debería consultar aquí antes de crear
+      // una cuenta nueva, para impedir que un RUT baneado se re-registre.
+      allow read: if request.auth != null;
+    }
+
+    // ============================================================
+    // NOTIFICATIONS → Centro de Avisos (🚩 Nueva Colección)
+    // ============================================================
+    match /notifications/{notifId} {
+      // El usuario solo puede leer y marcar como leído sus propias notificaciones
+      allow read, update: if request.auth != null && request.auth.uid == resource.data.userId;
+      
+      // Permitir crear notificaciones a cualquier usuario autenticado (un Pro a un Cliente y viceversa)
+      allow create: if request.auth != null;
+      
+      allow delete: if false;
+    }
+    // ============================================================
+    // REQUESTS → Solicitudes, PIN y Estados
+    // ============================================================
+    match /requests/{id} {
+      allow read, write: if request.auth != null;
+    }
+    // ============================================================
+    // REPORTS → Centro de Seguridad
+    // ============================================================
+    match /reports/{reportId} {
+      allow create: if request.auth != null;
+      // IMPORTANTE: Permitimos lectura a usuarios autenticados para que la 
+      // lógica de "Recurrencia" (getDocs) pueda verificar reportes previos.
+      allow read: if request.auth != null;
+      allow update, delete: if false;
+    }
+    // ============================================================
+    // CHATS → Mensajería, Typing y Sistema
+    // ============================================================
+    match /chats/{chatId} {
+      allow read, write: if request.auth != null;
+      match /messages/{msgId} { allow read, write: if request.auth != null; }
+      match /typing/{uid} { allow read, write: if request.auth != null; }
+    }
+    // ============================================================
+    // TRANSACTIONS → Historial Financiero
+    // ============================================================
+    match /transactions/{id} {
+      allow read: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      allow update, delete: if false;
+    }
+    // ============================================================
+    // TICKETS → Soporte Técnico y Sugerencias
+    // ============================================================
+    match /tickets/{ticketId} {
+      // El usuario puede crear un ticket si está autenticado
+      allow create: if request.auth != null;
+      // Solo el dueño del ticket puede leer su propio reporte
+      allow read: if request.auth != null && request.auth.uid == resource.data.uid;
+      allow update, delete: if false;
+    }
+    // Cerrar cualquier otra ruta no especificada
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

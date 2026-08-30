@@ -1,0 +1,157 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* FONDOS: En modo claro, usamos blanco total para el fondo y un gris suave para cards */
+  --bg-light: #ffffff;
+  --bg-dark: #000000; 
+
+  /* TEXTOS: Contraste total */
+  --text-light: #000000; /* Negro puro para lectura clara */
+  --text-dark: #ffffff;
+
+  /* MUTED: Para textos secundarios */
+  --muted-light: #666666;
+  --muted-dark: #a1a1a1;
+
+  /* BORDES Y CARDS: Aquí es donde se ve el minimalismo */
+  --border-light: #eeeeee; /* Bordes casi invisibles */
+  --border-dark: #222222;
+
+  --card-light: #f6f6f6; /* El card es un poco más oscuro que el fondo en modo claro */
+  --card-dark: #121212; /* El card es un poco más claro que el fondo en modo oscuro */
+
+  /* ACCIÓN: Negro en modo claro, Blanco en modo oscuro (Estilo Uber) */
+  --primary: #000000;
+  --primary-text: #ffffff;
+
+  /* ─────────────────────────────────────────────
+     PALETA EXTENDIDA ("premium tokens")
+     Usada en Dashboard, PerfilCliente, PerfilProfesional y Solicitar.
+     Antes, cada una de esas 4 páginas declaraba esta misma paleta de
+     forma independiente en un <style> inline propio (incluyendo el
+     @import de Google Fonts, repetido 4 veces), con un valor de
+     --card-dark distinto al de arriba (#1C1F23 en vez de #121212) —
+     es decir, las tarjetas en modo oscuro se veían de un tono
+     ligeramente distinto según la pantalla. Se consolidó todo aquí,
+     una sola vez, con --card-dark unificado a #121212 en toda la app.
+  ───────────────────────────────────────────── */
+  --paper: #F6F4EE;
+  --paper-dark: #15171A;
+  --ink: #1E2124;
+  --ink-dark: #F2F1ED;
+  --muted: #83807A;
+  --brand: #2F5D62;
+  --brand-light: #7FC4BC;
+  --brand-soft: #E3EEEC;
+  --brass: #A8752F;
+  --brass-soft: #F3E9D8;
+  --info: #3B6EA8;
+  --info-soft: #E4EBF3;
+  --danger: #B23A2E;
+}
+
+.dark {
+  --muted: #8B8E93;
+  --brand-soft: rgba(127,196,188,0.12);
+  --brass-soft: rgba(184,134,58,0.14);
+  --info-soft: rgba(107,157,214,0.14);
+}
+
+.font-display { font-family: 'Space Grotesk', sans-serif; letter-spacing: -0.01em; }
+.font-body { font-family: 'Inter', sans-serif; }
+.font-mono { font-family: 'JetBrains Mono', monospace; }
+
+/* ─────────────────────────────────────────────
+   ANIMACIONES COMPARTIDAS
+   Antes duplicadas (algunas hasta 3 veces, idénticas) dentro de los
+   mismos 4 archivos mencionados arriba.
+───────────────────────────────────────────── */
+@keyframes enter { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+.animate-enter { animation: enter 0.4s cubic-bezier(0.16,1,0.3,1) forwards; }
+
+@keyframes shake { 0%,100% { transform: translateX(0);} 25% { transform: translateX(-4px);} 75% { transform: translateX(4px);} }
+.animate-shake { animation: shake 0.3s ease-in-out; }
+
+@keyframes scanMove { 0%,100% { top: 4%; } 50% { top: 92%; } }
+.animate-scan { animation: scanMove 2.5s ease-in-out infinite; }
+
+@keyframes pop { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.animate-pop { animation: pop 0.35s cubic-bezier(0.16,1,0.3,1); }
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-enter, .animate-shake, .animate-scan, .animate-pop { animation: none; }
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: var(--bg-light);
+  color: var(--text-light);
+  transition: background-color 0.4s ease, color 0.4s ease;
+  -webkit-font-smoothing: antialiased;
+}
+
+.dark body {
+  background-color: var(--bg-dark);
+  color: var(--text-dark);
+}
+
+@layer components {
+  /* CARDS: Estilo flotante y minimalista */
+  .card {
+    @apply transition-all duration-300;
+    background-color: var(--card-light);
+    border: 1px solid var(--border-light);
+    border-radius: 2rem;
+  }
+
+  .dark .card {
+    background-color: var(--card-dark);
+    border-color: var(--border-dark);
+  }
+
+  /* BOTONES: El cambio radical a Blanco y Negro */
+  .btn-primary {
+    @apply px-6 py-4 bg-black dark:bg-white text-white dark:text-black rounded-2xl 
+           text-xs font-black uppercase tracking-widest transition-all 
+           active:scale-95 flex items-center justify-center gap-2;
+  }
+
+  .btn-secondary {
+    @apply px-6 py-4 rounded-2xl border transition-all active:scale-95 
+           text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2;
+    border-color: var(--border-light);
+    background-color: transparent;
+    color: var(--text-light);
+  }
+
+  .dark .btn-secondary {
+    border-color: var(--border-dark);
+    color: var(--text-dark);
+    @apply hover:bg-white/5;
+  }
+
+  /* INPUTS: Sin bordes gruesos, solo minimalismo */
+  .input-base {
+    @apply w-full px-6 py-4 rounded-2xl border-none outline-none transition-all text-sm font-medium;
+    background-color: #f0f0f0;
+    color: #000000;
+  }
+
+  .dark .input-base {
+    background-color: #1a1a1a;
+    color: #ffffff;
+  }
+
+  .input-base:focus {
+    @apply ring-2 ring-black/5 dark:ring-white/10;
+  }
+}
