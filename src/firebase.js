@@ -4,32 +4,14 @@ import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { getFunctions } from "firebase/functions";
 
-// NOTA: Firebase Storage se dejó de usar en este proyecto porque, desde
-// 2026, requiere el plan de pago Blaze (tarjeta vinculada). Las imágenes
-// (avatares, verificación de identidad, fotos de solicitudes, chat) se
-// comprimen en el navegador y se guardan como Base64 directamente en los
-// documentos de Firestore — ver src/lib/imageCompression.js. Firestore y
-// Auth siguen funcionando normalmente en el plan Spark (gratis).
-
-// La configuración web de Firebase se carga desde variables de entorno
-// (ver .env.example) en lugar de quedar escrita en el código fuente.
-//
-// Nota técnica: a diferencia del token de Mercado Pago o la llave de
-// servicio de Google Cloud, esta configuración NO es un secreto tradicional
-// — Firebase la considera segura de exponer en un cliente web, porque el
-// acceso real a los datos lo controlan las reglas de Firestore/Storage, no
-// esta clave. Aun así, se externaliza a variables de entorno porque:
-//   1) Permite usar un proyecto de Firebase distinto en desarrollo/pruebas
-//      sin tocar el código.
-//   2) Es el estándar exigido por el instructivo para que el repositorio
-//      público no contenga ningún valor de configuración embebido.
+ 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  apiKey: "AIzaSyB2xgExbjvpboEb3aiEM94rZbi9PA-1_aU",
+  authDomain: "gasfiter-final.firebaseapp.com",
+  projectId: "gasfiter-final",
+  storageBucket: "gasfiter-final.firebasestorage.app",
+  messagingSenderId: "522790105350",
+  appId: "1:522790105350:web:317f6a24565d0f64ecae87"
 };
 
 if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {

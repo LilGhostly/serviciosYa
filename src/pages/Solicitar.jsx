@@ -504,13 +504,7 @@ export default function Solicitar() {
             {!HAS_MAPS_KEY ? (
               /* ── Sin clave de Google Maps: formulario de dirección manual ── */
               <>
-                <div className="flex items-start gap-2.5 p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/40 rounded-2xl mb-1">
-                  <MapPin className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-                  <p className="text-[11px] text-amber-800 dark:text-amber-300 leading-relaxed">
-                    Ingresa la dirección manualmente. El autocompletado y mapa con Google Maps se activan
-                    configurando <code>VITE_GOOGLE_MAPS_API_KEY</code> en <code>.env</code>.
-                  </p>
-                </div>
+                
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-[var(--muted)]">Dirección</label>
                   <input type="text" value={form.address}

@@ -1,26 +1,20 @@
-# Emuladores de Firebase para desarrollo local en contenedor.
-# NOTA: esta imagen es para DESARROLLO, no para producción — Cloud Functions
-# se despliega directamente a Firebase (`firebase deploy --only functions`),
-# no se ejecuta en un contenedor propio en producción.
-FROM node:20-slim
+FROM node:20-alpine
 
-# El emulador de Firestore/Storage corre sobre la JVM.
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends default-jdk-headless curl \
-    && rm -rf /var/lib/apt/lists/*
+# Instala Java 21 (requerido por Firebase) y dependencias base
+RUN apk add --no-cache openjdk21-jre curl bash
 
-RUN npm install -g firebase-tools@15
+# Instala Firebase CLI
+RUN npm install -g firebase-tools
 
 WORKDIR /workspace
 
-# Dependencias de las Functions
+# Copia e instala las dependencias de Cloud Functions
 COPY functions/package*.json functions/
 RUN cd functions && npm ci
 
-# Config de Firebase (necesaria para que el emulador sepa qué levantar)
+# Copia la configuración de Firebase y el código
 COPY firebase.json firestore.rules firestore.indexes.json storage.rules ./
 COPY functions/ functions/
 
-EXPOSE 4000 5001 8080 9099 9199
-
-CMD ["firebase", "emulators:start", "--only", "auth,functions,firestore,storage"]
+# Arranca los emuladores 
+CMD ["firebase", "emulators:start", "--project", "demo-serviciosya"]
